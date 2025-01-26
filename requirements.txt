@@ -1,0 +1,5 @@
+scrapy
+vllm
+tqdm
+numpy
+transformers
