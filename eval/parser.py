@@ -586,8 +586,8 @@ def parse_ground_truth(example: Dict[str, Any], data_name):
 
     # parse ground truth
     if data_name.startswith("aops"):
-        gt_cot = None
-        gt_ans = example["answers"]
+        gt_cot = example["solution"]
+        gt_ans = example["answer"] if "answer" in example else example["answers"]
         if isinstance(gt_ans, list):
             gt_ans = [x if x.startswith("json") else strip_string(x) for x in gt_ans]
         return gt_cot, gt_ans
