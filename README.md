@@ -2,9 +2,9 @@
   <h1>Leveraging Online Olympiad-Level Math Problems for LLMs Training and Contamination-Resistant Evaluation</h1>
   <p>
   <a href="https://livemathbench.github.io/">Project Website</a> |
-  <a href="https://arxiv.org/pdf/2501.14275">Paper📝</a> |
-  <a href="https://huggingface.co/datasets/jojo23333/LiveAoPSBench-2024">LiveAopsBench</a> 📐 |
-  <a href="https://huggingface.co/datasets/DeepStudentLlama/AoPS-Instruct">AoPS-Ins (Third party)</a> 📊
+  <a href="https://arxiv.org/pdf/2501.14275">📝Paper</a> |
+  <a href="https://huggingface.co/datasets/jojo23333/LiveAoPSBench-2024">📐LiveAopsBench</a>  |
+  <a href="https://huggingface.co/datasets/DeepStudentLlama/AoPS-Instruct">📊AoPS-Ins (Third party)</a> 
   </p>
 </div>
 
