@@ -16,6 +16,7 @@ from trajectory import *
 from data_loader import load_data
 from python_executor import PythonExecutor
 from model_utils import load_hf_lm_and_tokenizer, generate_completions
+from api_model import GeminiLLM
 
 
 def parse_args():
@@ -108,7 +109,10 @@ def prepare_data(data_name, args):
 def setup(args):
     # load model
     available_gpus = os.environ["CUDA_VISIBLE_DEVICES"].split(",")
-    if args.use_vllm:
+    if args.model_name_or_path == "gemini":
+        llm = GeminiLLM()
+        tokenizer = None
+    elif args.use_vllm:
         extra_args = dict()
         if os.environ.get('MAX_MODEL_LEN'):
             extra_args['max_model_len'] = int(os.environ['MAX_MODEL_LEN'])
@@ -261,13 +265,27 @@ def main(llm, tokenizer, data_name, args):
 
         # get all outputs
         prompts = [item[1] for item in current_prompts]
-        if args.use_vllm:
+        if args.model_name_or_path == "gemini":
+            outputs = llm.generate(
+                prompts,
+                sampling_params={
+                    "temperature": args.temperature,
+                    "top_p": args.top_p,
+                }
+            )
+        elif args.use_vllm:
+            if 'qwq' in args.model_name_or_path.lower():
+                print("Using qwq model, set repetition_penalty to 1.05")
+                repetition_penalty = 1.05
+            else:
+                repetition_penalty = 1.0
             outputs = llm.generate(
                 prompts,
                 SamplingParams(
                     temperature=args.temperature,
                     top_p=args.top_p,
                     max_tokens=args.max_tokens_per_call,
+                    repetition_penalty=repetition_penalty,
                     n=1,
                     stop=stop_words,
                     stop_token_ids=(
