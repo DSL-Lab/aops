@@ -186,8 +186,9 @@ def parse_data_rewritten(data, math_stack=False, added_prompt=""):
             if original_post is None:
                 print(f"Original post not found for post number {post['post_number']}")
                 continue
-            
+
             post_time = find_earliest_time_stamp(all_posts)
+            
 
             score_post = int(original_post['thanks_received']) - int(original_post['nothanks_received'])
             if math_stack:
@@ -373,6 +374,11 @@ def process_files(args):
         save_for_annotate(
             apply_dct(data_2024),
             os.path.join(folder_path, 'test_2024_to_annotate.jsonl')
+        )
+        data_other = [x for x in sft_data if x['post_time']['year'] != 2024]
+        save_for_annotate(
+            data_other,
+            os.path.join(folder_path, 'train_to_annotate.jsonl')
         )
 
 

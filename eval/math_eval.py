@@ -79,8 +79,8 @@ def prepare_data(data_name, args):
     model_name = "/".join(args.model_name_or_path.split("/")[-2:])
     out_file_prefix = f"{args.split}_{args.prompt_type}_{args.num_test_sample}_seed{args.seed}_t{args.temperature}"
     output_dir = args.output_dir
-    if not os.path.exists(output_dir):
-        output_dir = f"outputs/{output_dir}"
+    # if not os.path.exists(output_dir):
+    #     output_dir = f"outputs/{output_dir}"
     out_file = f"{output_dir}/{data_name}/{out_file_prefix}_s{args.start}_e{args.end}.jsonl"
     os.makedirs(f"{output_dir}/{data_name}", exist_ok=True)
 
@@ -404,4 +404,7 @@ def main(llm, tokenizer, data_name, args):
 if __name__ == "__main__":
     args = parse_args()
     set_seed(args.seed)
+    if args.output_dir == "outputs":
+        model_name = args.model_name_or_path.split("/")[-1]
+        args.output_dir = f"outputs/{model_name}"
     setup(args)

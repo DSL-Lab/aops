@@ -9,7 +9,7 @@ import datetime
 
 class AOPSSpider(scrapy.Spider):
         name = 'aops'
-        MAX_TOPICS = 3_500_000
+        MAX_TOPICS = 3_600_000
         # start_urls = [f'https://artofproblemsolving.com/community/c6h{i}' for i in range(1, 500)]
 
         def __init__(self, total_spiders=None, spider_idx=None, start_date='2000-01', test_mode=False, **kwargs):
@@ -62,13 +62,13 @@ class AOPSSpider(scrapy.Spider):
         def _get_new_crawling_topic_idxs(self):
             crawled = set()
             # we assume topic_id increases monotonically
-            def find_earliest_time_stamp(earlist_post_time, all_posts):
-                for post in all_posts:
-                    if 'post_time' in post:
-                        post_time = datetime.datetime.fromtimestamp(post['post_time'])
-                        if post_time < earlist_post_time:
-                            earlist_post_time = post_time
-                return earlist_post_time
+            def find_earliest_time_stamp(all_posts):
+                first_post = all_posts[0]
+                # for post in all_posts:
+                post_time = datetime.datetime.fromtimestamp(first_post['post_time'])
+                # if post_time < earlist_post_time:
+                #     earlist_post_time = post_time
+                return post_time
 
             if os.path.exists(self._items_file):
                 print("Reading existing items file")
@@ -77,10 +77,14 @@ class AOPSSpider(scrapy.Spider):
                         try:
                             data = json.loads(l)
                             topic_idx = int(data['topic_id'])
-                            if 'response' in data['response'] and 'initialization_time' in data['response']['response'] and 'error_code' not in data['response']:
+                            if 'response' in data['response'] \
+                                    and 'initialization_time' in data['response']['response']\
+                                    and 'error_code' not in data['response'] \
+                                    and len(data['response']['response']['posts']) != 0:
                                 init_time = data['response']['response']['initialization_time']
                                 init_time = datetime.datetime.fromtimestamp(init_time)
-                                post_time = find_earliest_time_stamp(init_time, data['response']['response']['posts'])
+                                post_time = find_earliest_time_stamp(data['response']['response']['posts'])
+                                # print(post_time, " - > ", self.start_date)
                                 if post_time > self.start_date:
                                     break
                         except:
@@ -91,7 +95,7 @@ class AOPSSpider(scrapy.Spider):
             self.logger.info(f"Last crawled topic: {last_topic_idx}")
             if len(crawled) != 0:
                 self.logger.info(f"Continuing crawling, so far crawled {len(crawled)}")
-            max_topic_idx = min(last_topic_idx + 1000, AOPSSpider.MAX_TOPICS)
+            max_topic_idx = max(last_topic_idx + 50000, AOPSSpider.MAX_TOPICS)
             for i in range(last_topic_idx, max_topic_idx):
                 if i not in crawled:
                     yield i

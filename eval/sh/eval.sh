@@ -3,7 +3,7 @@ set -ex
 PROMPT_TYPE=$1
 MODEL_NAME_OR_PATH=$2
 DATA_NAME=$3
-OUTPUT_DIR=${4}/math_eval
+OUTPUT_DIR=${4:-"outputs"}
 
 SPLIT="test"
 NUM_TEST_SAMPLE=-1

@@ -279,8 +279,8 @@ def accept_ans_w_ref(ans_l, ref_ans_l):
                 continue
             if math_equal(ans, ref_ans, timeout=True):
                 accepted_ans_l.append(ans)
-            elif ans in ref_ans:
-                accepted_ans_l.append(ans)
+            # elif ans in ref_ans:
+            #     accepted_ans_l.append(ans)
     return accepted_ans_l
 
 def get_diff_labels():
@@ -306,6 +306,7 @@ if __name__ == '__main__':
     parser.add_argument('--jsonl1_name', type=str, default='qwen')
     parser.add_argument('--jsonl2', type=str, default='/data/muchenli/QED/data/aops/70b_rewritten/AOPS_v0.2_eval/2024_1-8_to_annotate.jsonl')
     parser.add_argument('--jsonl2_name', type=str, default='llama')
+    parser.add_argument('--output_path', type=str, default='out/LiveAoPSbench2024.jsonl')
 
 
     args = parser.parse_args()
@@ -314,13 +315,13 @@ if __name__ == '__main__':
     data1 = {d['topic_id']: d for d in data1}
     data2 = [json.loads(line) for line in open(args.jsonl2).readlines()]
     data2 = {d['topic_id']: d for d in data2}
-    
+
+    f_inconsistent_between_posts = open('out/inconsistent_between_posts.jsonl', 'w')
     f_inconsistent_w_original = open('out/inconsistent_w_original.jsonl', 'w')
     f_no_answer = open('out/no_answer.jsonl', 'w')
     f_has_text = open('out/has_text.jsonl', 'w')
     # outout_jsonl = os.path.basename(args.jsonl1).replace('.jsonl', '_standardized.jsonl')
-    outout_jsonl = "aops_2024.jsonl"
-    f_output_jsonl = open(os.path.join('out', outout_jsonl), 'w')
+    f_output_jsonl = open(args.output_path, 'w')
     diff_d = get_diff_labels()
     for topic_id in tqdm(data1.keys()):
         print('Processing topic', topic_id)
@@ -335,6 +336,14 @@ if __name__ == '__main__':
         if data1[topic_id]['rewritten_question'].count('?') > 2:
             print('Skipping topic', topic_id, 'because of too many ?')
             continue
+        if data1[topic_id]['rewritten_question'].startswith('1.'):
+            print('Skipping topic', topic_id, 'because of potential multi-question ?')
+            continue
+        
+        if data1[topic_id]['rewritten_question'].startswith('(a'):
+            print('Skipping topic', topic_id, 'because of potential multi-question ?')
+            continue
+        
         d1 = data1[topic_id]
         if topic_id not in data2:
             continue
@@ -365,10 +374,12 @@ if __name__ == '__main__':
         
         # if original answer is found, use it  
         if list_not_all_none(d1['boxed_answers_original']):
-            answers = accept_ans_w_ref(d1['boxed_answers'], d1['boxed_answers_original'])
-            answers = answers + accept_ans_w_ref(d2['boxed_answers'], d1['boxed_answers_original'])
-            answers = answers + [x for x in d1['boxed_answers_original'] if x is not None]
-            print('Original answer found, accepted answer cnt:', len(answers))
+            # answers = accept_ans_w_ref(d1['boxed_answers'], d1['boxed_answers_original'])
+            # answers = answers + accept_ans_w_ref(d2['boxed_answers'], d1['boxed_answers_original'])
+            # answers = answers + [x for x in d1['boxed_answers_original'] if x is not None]
+            # print('Original answer found, accepted answer cnt:', len(answers))
+            answers = [(x, 1) for x in d1['boxed_answers_original'] if x is not None]
+            answers = [answers[0]]
         # if original answer is not found, use all consistent answers
         else:
             answers = []
@@ -376,20 +387,35 @@ if __name__ == '__main__':
                 if post_number not in d2_id2ans:
                     print(f'Post number {post_number} not found in d2 for topic {topic_id}')
                     continue
-                if d1_id2ans[post_number] is not None and d2_id2ans[post_number] is not None:
-                    if math_equal(d1_id2ans[post_number], d2_id2ans[post_number], timeout=True):
-                        answers.append(d1_id2ans[post_number])
-                        answers.append(d2_id2ans[post_number])
+                if math_equal(d1_id2ans[post_number], d2_id2ans[post_number], timeout=True):
+                    # de duplicate
+                    has_match = False
+                    for idx, _ in enumerate(answers):
+                        if math_equal(d1_id2ans[post_number], answers[idx][0], timeout=True):
+                            answers[idx][1] = answers[idx][1] + 1
+                            has_match = True
+                            break
+                    if not has_match:
+                        answers.append([d1_id2ans[post_number], 1])
+                   
+                    # answers.append(d2_id2ans[post_number])
         
         # summerize ans save
-        answers = list(set(answers))
+        print(answers)
+        answers = sorted(answers, key=lambda x: x[1], reverse=True)
         if len(answers) == 0:
             print('No answer found for topic', topic_id)
             f_no_answer.write(json.dumps(d1) + '\n')
             f_no_answer.write(json.dumps(d2) + '\n')
             f_no_answer.write('\n')
+        elif len(answers) > 1 and answers[0][1] == answers[1][1]:
+            print('Multiple answers with tie found for topic', topic_id)
+            f_inconsistent_between_posts.write(json.dumps(d1) + '\n')
+            f_inconsistent_between_posts.write(json.dumps(d2) + '\n')
+            f_inconsistent_between_posts.write('\n')
         else:
-            answers = sorted(answers, key=lambda x: len(x))
+            answers = [answers[0][0]]
+            # answers = sorted(answers, key=lambda x: len(x))
             d_to_save['voted_answer'] = answers
             # remove anything that have \\text{}
             has_text = ["\\text{" in ans for ans in answers]

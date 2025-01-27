@@ -13,13 +13,13 @@ def process_data(data):
     else:
         return None
 
-def find_post_year(earlist_post_time, all_posts):
-    for post in all_posts:
-        if 'post_time' in post:
-            post_time = datetime.datetime.fromtimestamp(post['post_time'])
-            if post_time < earlist_post_time:
-                earlist_post_time = post_time
-    return earlist_post_time
+def find_post_year(all_posts):
+    first_post = all_posts[0]
+    # for post in all_posts:
+    post_time = datetime.datetime.fromtimestamp(first_post['post_time'])
+    # if post_time < earlist_post_time:
+    #     earlist_post_time = post_time
+    return post_time
 
 def read_and_write_jsonl(input_path, output_path, reference_path=None, start_date='2000-01', end_date='2030-01'):
     """Reads a JSON Lines file, processes each line, and writes it to another file."""
@@ -54,9 +54,10 @@ def read_and_write_jsonl(input_path, output_path, reference_path=None, start_dat
                 if init_time < topic_id_reference[topic_id]:
                     continue
                 else:
-                    post_time = find_post_year(init_time, processed_data['response']['response']['posts'])
                     if len(processed_data['response']['response']['posts']) == 0:
                         continue
+                    post_time = find_post_year(processed_data['response']['response']['posts'])
+                    print(post_time)
                     if post_time >= start_date and post_time <= end_date:
                         json_output = json.dumps(processed_data)  # Convert dictionary back to JSON string
                         output_file.write(json_output + '\n')  # Write to the output file
