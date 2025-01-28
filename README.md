@@ -50,7 +50,7 @@ To construct the `AoPS-Instruct` dataset:
    This will process the raw crawled data and create the final training dataset in the specified format. The script supports resuming, so if interrupted, it will pick up where it left off.
 
 ## Processed Data
-We provide the full code for reproducing AoPS-Ins and LiveAoPSBench, making it easy for you to explore and experiment with these tools. Processed data is available through a community reproduction effort, accessible here: [Hugging Face Dataset](https://huggingface.co/datasets/DeepStudentLlama/AoPS-Instruct). We disclaim any liability for the use of this third-party dataset.
+We provide the full code for reproducing AoPS-Ins and LiveAoPSBench, making it easy for you to explore and experiment with these tools. Processed data is available through a community reproduction effort, accessible here: [Hugging Face Dataset](https://huggingface.co/datasets/DeepStudentLlama/AoPS-Instruct). We encourage the use of this third-party dataset but note that we are not responsible for any potential issues that may arise.
 
 ## Evaluation Code
 
