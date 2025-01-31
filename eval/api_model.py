@@ -1,5 +1,6 @@
 import time
 import os
+import json
 from collections import deque
 from typing import List
 
@@ -15,6 +16,11 @@ class GeminiLLM:
         self.model_name = model_name
         self.rate_limit_queue = deque(maxlen=10)  # Track last 10 call timestamps
         self.default_config = {'thinking_config': {'include_thoughts': True}}
+        if os.path.exists("outputs/gemini_cache.txt"):
+            with open("outputs/gemini_cache.txt", "r") as f:
+                self.cache = json.load(f)
+        else:
+            self.cache = {}
 
     def generate(self, prompts: List[str], sampling_params: dict) -> List[str]:
         outputs = []
@@ -26,8 +32,15 @@ class GeminiLLM:
                 **self.default_config
             }
             print(f"Generating for prompt: {prompt}")
+            if prompt in self.cache:
+                print("Using cached response")
+                outputs.append(self.cache[prompt])
+                continue
             response = self._generate_with_retry(prompt, config)
             outputs.append(self._parse_response(response))
+            self.cache[prompt] = outputs[-1]
+            with open("outputs/gemini_cache.txt", "w") as f:
+                json.dump(self.cache, f)
             
         return outputs
 
@@ -46,7 +59,7 @@ class GeminiLLM:
         self.rate_limit_queue.append(time.time())
 
     def _generate_with_retry(self, prompt: str, config: dict):
-        max_retries = 600
+        max_retries = 200
         retry_wait_seconds = 60  # 1 minutes
         attempt = 0
         
@@ -57,25 +70,34 @@ class GeminiLLM:
                     contents=prompt,
                     config=config
                 )
-            except GoogleAPIError as e:
+            # except genai.errors.ServerErro as e:
+            #     attempt += 1
+            #     if attempt <= max_retries:
+            #         print(f"Rate limit exceeded. Retry attempt {attempt}/{max_retries}")
+            #         print(f"Waiting {retry_wait_seconds//60} minutes before retrying...")
+            #         time.sleep(retry_wait_seconds)
+            #     else:
+            #         # Re-raise original exception if not retrying
+            #         print(f"API Error: {str(e)}")
+            #         raise
+            except Exception as e:
                 attempt += 1
-                if e.code == 429 and attempt <= max_retries:
-                    print(f"Rate limit exceeded. Retry attempt {attempt}/{max_retries}")
-                    print(f"Waiting {retry_wait_seconds//60} minutes before retrying...")
+                if attempt <= max_retries:
+                    print(f"Unexpected error: {str(e)}")
                     time.sleep(retry_wait_seconds)
                 else:
                     # Re-raise original exception if not retrying
                     print(f"API Error: {str(e)}")
                     raise
-            except Exception as e:
-                print(f"Unexpected error: {str(e)}")
-                raise
 
         # This should never be reached due to the raise above
         raise RuntimeError("Max retries exceeded unexpectedly")
 
     def _parse_response(self, response) -> str:
         """Parse Gemini response and concatenate all text parts"""
+        
+        if response.candidates is None or response.candidates[0].content is None:
+            return "No response"
         parts = response.candidates[0].content.parts
         return '\n'.join([part.text for part in parts])
 

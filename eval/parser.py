@@ -592,7 +592,7 @@ def parse_ground_truth(example: Dict[str, Any], data_name):
             gt_ans_all = []
             for ans in gt_ans:
                 # e.g. x=1, match the right hand side as well
-                if gt_ans.count("=") == 1:
+                if ans.count("=") == 1:
                     gt_ans_all.append(ans.split("=")[1].strip())
                 gt_ans_all.append(ans)
             gt_ans = [x if x.startswith("json") else strip_string(x) for x in gt_ans_all]
