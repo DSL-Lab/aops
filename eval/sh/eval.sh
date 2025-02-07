@@ -11,6 +11,7 @@ START=${START:-0}
 END=${END:--1}
 TEMPERATURE=${TEMPERATURE:-0}
 TOP_P=${TOP_P:-1}
+N_SAMPLE=${N_SAMPLE:-1}
 MAX_TOKENS_PER_CALL=${MAX_TOKENS_PER_CALL:-16384}
 
 TOKENIZERS_PARALLELISM=false \
@@ -23,7 +24,7 @@ python3 -u math_eval.py \
     --num_test_sample ${NUM_TEST_SAMPLE} \
     --seed 0 \
     --temperature ${TEMPERATURE} \
-    --n_sampling 1 \
+    --n_sampling ${N_SAMPLE} \
     --top_p ${TOP_P} \
     --start ${START} \
     --end ${END} \
